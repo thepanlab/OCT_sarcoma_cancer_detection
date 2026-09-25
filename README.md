@@ -37,13 +37,15 @@ Fine-tunes ImageNet-pretrained backbones as binary classifiers, one modality at 
 - **ConvNeXt-Base**
 - **Swin-B**
 
-Each model is trained with `BCEWithLogitsLoss` and SGD, evaluated with 5-fold cross-validation (folds `s1`–`s5`), and for each fold saves:
+Each model is trained with `BCEWithLogitsLoss` and Adam (or SGD based on our choice), evaluated with 5-fold cross-validation (folds `s1`–`s5`), and for each fold saves:
 - model checkpoint (`.pt`)
 - per-sample predictions with class probabilities (`.csv`, for ROC analysis)
 - confusion matrix (`.json`)
 - inference/timing breakdown (`.json`, separating pure model inference time from data-loading overhead)
 
 A final `cross_validation_summary.csv` and `statistics.json` aggregate accuracy and timing across all 5 folds.
+
+For InceptionV3, ResNet50, and Octascope, please refer to our group's NACHOS training pipeline (https://github.com/thepanlab/NACHOS). 
 
 **Usage:**
 ```bash
