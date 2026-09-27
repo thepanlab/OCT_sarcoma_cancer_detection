@@ -49,9 +49,17 @@ For InceptionV3, ResNet50, and Octascope, please refer to our group's NACHOS tra
 
 **Usage:**
 ```bash
-python sarcoma.py --modality intensity
+python sarcoma.py --model convnext --modality intensity
+python sarcoma.py --model swin --modality dopu --epochs 20 --lr 1e-5 --batch_size 64
 ```
-(`--modality` accepts `intensity`, `opticaxis`, `retardation`, or `dopu`)
+
+| Argument       | Default    | Description                                          |
+|----------------|------------|------------------------------------------------------|
+| `--model`      | (required) | `convnext` or `swin`                                 |
+| `--modality`   | (required) | `intensity`, `opticaxis`, `retardation`, or `dopu`   |
+| `--epochs`     | `10`       | Training epochs per fold                             |
+| `--lr`         | `1e-4`     | Learning rate                                        |
+| `--batch_size` | `32`       | Batch size for training and testing                  |
 
 Update `label_csv`, `image_dir`, and `base_output_dir` in `run_cross_testing()` to match your environment before running.
 
@@ -85,4 +93,4 @@ pip install torch torchvision pandas numpy scikit-learn pillow tifffile tqdm
 
 ## Citation
 
-If you use this code, please cite our manuscript (citation details to be added upon publication).
+If you use this code, please cite our manuscript: https://opg.optica.org/boe/fulltext.cfm?uri=boe-17-10-5213##
