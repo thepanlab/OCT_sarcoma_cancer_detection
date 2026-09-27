@@ -78,7 +78,7 @@ def build_swin_binary():
 
 
 
-def train_model(model, train_loader, test_loader, device, fold, model_name, output_dir, epochs=10):
+def train_model(model, train_loader, test_loader, device, fold, model_name, output_dir, epochs=10, lr=1e-4):
     """
     Train model and save all necessary outputs for evaluation.
     
@@ -90,7 +90,7 @@ def train_model(model, train_loader, test_loader, device, fold, model_name, outp
     """
     model.to(device)
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     # Training loop
     for epoch in range(epochs):
@@ -217,13 +217,16 @@ def train_model(model, train_loader, test_loader, device, fold, model_name, outp
     }
 
 
-def run_cross_testing(model_name, modality):
+def run_cross_testing(model_name, modality, epochs=10, lr=1e-4, batch_size=32):
     """
     Run 5-fold cross-validation with organized output structure.
     
     Args:
         model_name: 'convnext', 'swin',
         modality: 'opticaxis', 'intensity', etc.
+        epochs: number of training epochs per fold
+        lr: learning rate
+        batch_size: batch size for training and testing
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
@@ -237,6 +240,7 @@ def run_cross_testing(model_name, modality):
     
     print(f"\n{'='*60}")
     print(f"Running {model_name.upper()} on {modality.upper()}")
+    print(f"Epochs: {epochs} | LR: {lr} | Batch size: {batch_size}")
     print(f"Output directory: {base_output_dir}")
     print(f"{'='*60}\n")
     
@@ -251,8 +255,8 @@ def run_cross_testing(model_name, modality):
         
         # Load data
         train_dataset, test_dataset = load_fold_data(label_csv, image_dir, test_fold_idx=fold, model_name=model_name)
-        train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=8, pin_memory=True)
-        test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=8, pin_memory=True)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
 
         # Build model
         if model_name == 'convnext':
@@ -266,7 +270,7 @@ def run_cross_testing(model_name, modality):
         # Train and evaluate
         result = train_model(
             model, train_loader, test_loader, device, 
-            fold=fold, model_name=model_name, output_dir=fold_output_dir, epochs=10
+            fold=fold, model_name=model_name, output_dir=fold_output_dir, epochs=epochs, lr=lr
         )
         
         print(f"Fold {fold} Results: {result}")
@@ -313,33 +317,29 @@ def run_cross_testing(model_name, modality):
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Train ConvNeXt, Swin models on sarcoma binary classification')
+    parser.add_argument('--model', type=str, required=True, choices=['convnext', 'swin'],
+                        help='Model name: convnext or swin')
     parser.add_argument('--modality', type=str, required=True,
                         help='Modality name (e.g., opticaxis, intensity, dopu, retardation)')
+    parser.add_argument('--epochs', type=int, default=10,
+                        help='Number of training epochs per fold (default: 10)')
+    parser.add_argument('--lr', type=float, default=1e-4,
+                        help='Learning rate (default: 1e-4)')
+    parser.add_argument('--batch_size', type=int, default=32,
+                        help='Batch size (default: 32)')
     args = parser.parse_args()
-    
-    modality = args.modality
-    
 
+    print("\n" + "="*60)
+    print(f"STARTING {args.model.upper()} TRAINING - {args.modality.upper()}")
+    print("="*60)
+    results = run_cross_testing(
+        model_name=args.model,
+        modality=args.modality,
+        epochs=args.epochs,
+        lr=args.lr,
+        batch_size=args.batch_size
+    )
 
-
-    # Run for ConvNeXt
-    # print("\n" + "="*60)
-    # print(f"STARTING CONVNEXT TRAINING - {modality.upper()}")
-    # print("="*60)
-    # convnext_results = run_cross_testing(model_name='convnext', modality=modality)
-    
-
-    
-    # print("\n" + "="*60)
-    # print("✅ ALL TRAINING COMPLETE")
-    # print("="*60)
-
-
-    
-    # Run for Swin Transformer
-    # print("\n" + "="*60)
-    # print(f"STARTING SWIN TRANSFORMER TRAINING - {modality.upper()}")
-    # print("="*60)
-    # swin_results = run_cross_testing(model_name='swin', modality=modality)
-    
- 
+    print("\n" + "="*60)
+    print("✅ ALL TRAINING COMPLETE")
+    print("="*60)
